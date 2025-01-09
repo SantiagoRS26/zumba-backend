@@ -1,15 +1,17 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const connectDB = require('./config/db');
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import connectDB from './src/config/db.js';
 
-const authRoutes = require('./routes/auth.routes');
-const userRoutes = require('./routes/user.routes');
-const seedRoutes = require('./routes/seed.routes');
-const paymentRoutes = require('./routes/payment.routes');
-const classSessionRoutes = require('./routes/classSession.routes');
-const reportRoutes = require('./routes/report.routes');
-const measurementRoutes = require('./routes/measurement.routes');
+import authRoutes from './src/routes/auth.routes.js';
+import userRoutes from './src/routes/user.routes.js';
+import seedRoutes from './src/routes/seed.routes.js';
+import paymentRoutes from './src/routes/payment.routes.js';
+import classSessionRoutes from './src/routes/classSession.routes.js';
+import reportRoutes from './src/routes/report.routes.js';
+import measurementRoutes from './src/routes/measurement.routes.js';
+
+dotenv.config();
 
 const app = express();
 
