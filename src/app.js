@@ -27,6 +27,10 @@ app.use('/api/class-sessions', classSessionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/measurements', measurementRoutes);
 
+app.get("/", (req, res) => {
+    res.send("Welcome to the API Zumba");
+})
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`>>> Servidor en puerto ${PORT}`);
