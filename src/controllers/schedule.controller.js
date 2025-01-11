@@ -11,6 +11,34 @@ const ClassSession = require('../models/classSession.model');
  *   "year": 2025
  * }
  */
+
+exports.createSchedule = async (req, res) => {
+  try {
+    const { name, daysOfWeek, startTime, endTime } = req.body;
+
+    // Validaciones mínimas
+    if (!daysOfWeek || !Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
+      return res.status(400).json({ message: 'daysOfWeek es obligatorio (array)' });
+    }
+
+    const schedule = new Schedule({
+      name,
+      daysOfWeek,
+      startTime,
+      endTime,
+    });
+    await schedule.save();
+
+    res.status(201).json({
+      message: 'Schedule creado exitosamente',
+      schedule,
+    });
+  } catch (error) {
+    console.error('Error al crear schedule:', error);
+    res.status(500).json({ message: 'Error interno' });
+  }
+};
+
 exports.generateClassesFromSchedule = async (req, res) => {
   try {
     const { scheduleId, month, year } = req.body;
@@ -59,5 +87,29 @@ exports.generateClassesFromSchedule = async (req, res) => {
   } catch (error) {
     console.error('Error al generar clases:', error);
     res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+exports.getAllSchedules = async (req, res) => {
+  try {
+    const schedules = await Schedule.find();
+    return res.json(schedules);
+  } catch (error) {
+    console.error('Error al obtener schedules:', error);
+    return res.status(500).json({ message: 'Error interno' });
+  }
+};
+
+exports.deleteSchedule = async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const deleted = await Schedule.findByIdAndDelete(scheduleId);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Schedule no encontrado' });
+    }
+    return res.json({ message: 'Schedule eliminado correctamente.' });
+  } catch (error) {
+    console.error('Error al eliminar schedule:', error);
+    return res.status(500).json({ message: 'Error interno' });
   }
 };

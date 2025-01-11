@@ -10,6 +10,7 @@ import paymentRoutes from './src/routes/payment.routes.js';
 import classSessionRoutes from './src/routes/classSession.routes.js';
 import reportRoutes from './src/routes/report.routes.js';
 import measurementRoutes from './src/routes/measurement.routes.js';
+import scheduleRoutes from './src/routes/schedule.routes.js';
 
 dotenv.config();
 
@@ -28,6 +29,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/class-sessions', classSessionRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/measurements', measurementRoutes);
+app.use('/api/schedules', scheduleRoutes);
+
 
 app.get("/", (req, res) => {
     res.send("Welcome to the API Zumba");
