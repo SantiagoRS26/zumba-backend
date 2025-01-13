@@ -153,3 +153,20 @@ exports.getUserById = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+exports.getAllTeachers = async (req, res) => {
+  try {
+    const teachers = await User.find({ userType: 'teacher' }).select('_id username');
+
+    const formattedTeachers = teachers.map(teacher => ({
+      id: teacher._id,
+      username: teacher.username,
+    }));
+
+    return res.json(formattedTeachers);
+  } catch (error) {
+    console.error('Error al obtener teachers:', error);
+    return res.status(500).json({ message: 'Error interno' });
+  }
+};
+

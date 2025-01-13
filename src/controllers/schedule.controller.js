@@ -16,79 +16,98 @@ exports.createSchedule = async (req, res) => {
   try {
     const { name, daysOfWeek, startTime, endTime } = req.body;
 
-    // Validaciones mínimas
-    if (!daysOfWeek || !Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
-      return res.status(400).json({ message: 'daysOfWeek es obligatorio (array)' });
+    // Validaciones
+    if (!name || !daysOfWeek || !Array.isArray(daysOfWeek) || daysOfWeek.length === 0) {
+      return res.status(400).json({ message: 'Debes proveer un nombre y al menos un día de la semana.' });
+    }
+    if (!startTime || !endTime) {
+      return res.status(400).json({ message: 'Debes proveer una hora de inicio y fin.' });
     }
 
-    const schedule = new Schedule({
-      name,
-      daysOfWeek,
+    // Convertir daysOfWeek en timeSlots
+    const timeSlots = daysOfWeek.map(day => ({
+      dayOfWeek: day,
       startTime,
       endTime,
-    });
-    await schedule.save();
+    }));
 
-    res.status(201).json({
+    // Crear el objeto schedule
+    const schedule = new Schedule({
+      name,
+      timeSlots,
+    });
+
+    // Guardar en la base de datos
+    await schedule.save();
+    return res.status(201).json({
       message: 'Schedule creado exitosamente',
       schedule,
     });
   } catch (error) {
     console.error('Error al crear schedule:', error);
-    res.status(500).json({ message: 'Error interno' });
+    return res.status(500).json({ message: 'Error interno' });
   }
 };
+
 
 exports.generateClassesFromSchedule = async (req, res) => {
   try {
     const { scheduleId, month, year } = req.body;
-
-    // Buscar el schedule
     const schedule = await Schedule.findById(scheduleId);
     if (!schedule) {
       return res.status(404).json({ message: 'Schedule no encontrado' });
     }
 
-    // Convertir a num
     const m = Number(month);
     const y = Number(year);
 
-    // Generamos las fechas
-    // Ej: si daysOfWeek=[1,3,5], creamos clases para todos los lunes, miércoles, viernes
-    const classesToCreate = [];
-    const daysOfWeek = schedule.daysOfWeek; // array de [1,3,5] = lun, mie, vie
+    const timeSlots = schedule.timeSlots; 
+    // Ejemplo de timeSlots:
+    // [
+    //   { dayOfWeek: 1, startTime: "14:00", endTime: "16:00" },
+    //   { dayOfWeek: 2, startTime: "16:00", endTime: "18:00" },
+    //   { dayOfWeek: 2, startTime: "18:00", endTime: "19:00" } // se puede tener más de uno en un mismo día
+    // ]
 
-    // Recorremos todos los días del mes (1..31, con cuidado de no pasarnos)
-    const dateObj = new Date(y, m - 1, 1); // primer día (mes inicia en 0 en JS)
+    const classesToCreate = [];
+    const dateObj = new Date(y, m - 1, 1); // primer día del mes
+
     while (dateObj.getMonth() + 1 === m) {
-      // dayOfWeek en JS => 0=Dom,1=Lun,...6=Sab
-      const dayOfWeek = dateObj.getDay();
-      if (daysOfWeek.includes(dayOfWeek)) {
-        // Creamos un record
+      const currentDay = dateObj.getDate();       // p.ej. 1..31
+      const dayOfWeekJs = dateObj.getDay();       // 0=Dom..6=Sab
+
+      // Filtrar todos los slots que coincidan con dayOfWeekJs
+      const slotsForThisDay = timeSlots.filter(
+        (slot) => slot.dayOfWeek === dayOfWeekJs
+      );
+
+      // Por cada slot, creamos un record
+      for (const slot of slotsForThisDay) {
         classesToCreate.push({
-          day: dateObj.getDate(),
+          day: currentDay,
           month: m,
           year: y,
-          startTime: schedule.startTime || '',
-          endTime: schedule.endTime || ''
+          startTime: slot.startTime || '',
+          endTime: slot.endTime || '',
         });
       }
-      // Pasamos al siguiente día
+
       dateObj.setDate(dateObj.getDate() + 1);
     }
 
-    // Insertamos en la BD
+    const ClassSession = require('../models/classSession.model');
     const classSessions = await ClassSession.insertMany(classesToCreate);
 
     return res.json({
-      message: `Clases generadas para mes ${m}/${y}`,
-      classSessions
+      message: `Clases generadas para el mes ${m}/${y}`,
+      classSessions,
     });
   } catch (error) {
     console.error('Error al generar clases:', error);
-    res.status(500).json({ message: 'Error interno' });
+    return res.status(500).json({ message: 'Error interno' });
   }
 };
+
 
 exports.getAllSchedules = async (req, res) => {
   try {

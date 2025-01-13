@@ -1,15 +1,10 @@
 // src/models/schedule.model.js
 const mongoose = require('mongoose');
 
-const ScheduleSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    default: ''
-  },
-  // Ejemplo: [1, 3, 5] => lunes, miércoles, viernes
-  daysOfWeek: {
-    type: [Number], // 0=Domingo..6=Sábado
-    default: []
+const TimeSlotSchema = new mongoose.Schema({
+  dayOfWeek: {
+    type: Number, // 0=Domingo..6=Sábado
+    required: true
   },
   startTime: {
     type: String,
@@ -19,7 +14,21 @@ const ScheduleSchema = new mongoose.Schema({
     type: String,
     default: ''
   }
-  // Podrías poner más campos si gustas
+}, { _id: false });
+
+const ScheduleSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    default: ''
+  },
+  /**
+   * timeSlots será un array de objetos
+   * donde cada objeto indica dayOfWeek + startTime + endTime
+   */
+  timeSlots: {
+    type: [TimeSlotSchema],
+    default: []
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Schedule', ScheduleSchema);

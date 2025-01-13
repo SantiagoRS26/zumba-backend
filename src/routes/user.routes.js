@@ -4,6 +4,8 @@ const router = Router();
 const userController = require('../controllers/user.controller');
 const { verifyToken, isAdmin, isSuperAdmin } = require('../middlewares/auth.middleware');
 
+router.get('/teachers', verifyToken, isAdmin, userController.getAllTeachers);
+
 router.get('/profile', verifyToken, userController.getProfile);
 
 router.get('/', verifyToken, isAdmin, userController.getAllUsers);

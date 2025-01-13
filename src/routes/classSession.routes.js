@@ -4,6 +4,9 @@ const classController = require('../controllers/classSession.controller');
 
 const { verifyToken, isAdmin } = require('../middlewares/auth.middleware');
 
+// Rutas específicas van primero
+router.put('/:classId/assign-teacher', verifyToken, isAdmin, classController.assignTeacher);
+
 // Crear una clase (admin)
 router.post('/', verifyToken, isAdmin, classController.createClassSession);
 
@@ -24,6 +27,5 @@ router.delete('/:classId', verifyToken, isAdmin, classController.deleteClassSess
 
 // Historial de asistencias de un usuario
 router.get('/user/:userId', verifyToken, isAdmin, classController.getUserAttendance);
-
 
 module.exports = router;

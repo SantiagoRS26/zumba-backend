@@ -45,7 +45,10 @@ exports.getAllClassSessions = async (req, res) => {
         if (month) query.month = Number(month);
         if (year) query.year = Number(year);
 
-        const classes = await ClassSession.find(query).sort({ year: 1, month: 1, day: 1 });
+        const classes = await ClassSession.find(query)
+            .populate('teachers', 'username email')
+            .sort({ year: 1, month: 1, day: 1 });
+
         res.json(classes);
     } catch (error) {
         console.error('Error al obtener clases:', error);
@@ -153,30 +156,55 @@ exports.deleteClassSession = async (req, res) => {
 
 exports.getUserAttendance = async (req, res) => {
     try {
-      const { userId } = req.params;
-  
-      // Buscar clases donde el usuario marcó asistencia
-      const classes = await ClassSession.find({ 'attendance.userId': userId })
-        .select('date title attendance') // Selecciona los campos necesarios
-        .lean();
-  
-      // Filtrar las asistencias del usuario específico
-      const attendanceHistory = classes.map((classSession) => {
-        const userAttendance = classSession.attendance.find(
-          (a) => a.userId.toString() === userId
-        );
-  
-        return {
-          classId: classSession._id,
-          title: classSession.title,
-          date: classSession.date,
-          status: userAttendance ? userAttendance.status : 'absent',
-        };
-      });
-  
-      return res.json(attendanceHistory);
+        const { userId } = req.params;
+
+        // Buscar clases donde el usuario marcó asistencia
+        const classes = await ClassSession.find({ 'attendance.userId': userId })
+            .select('date title attendance') // Selecciona los campos necesarios
+            .lean();
+
+        // Filtrar las asistencias del usuario específico
+        const attendanceHistory = classes.map((classSession) => {
+            const userAttendance = classSession.attendance.find(
+                (a) => a.userId.toString() === userId
+            );
+
+            return {
+                classId: classSession._id,
+                title: classSession.title,
+                date: classSession.date,
+                status: userAttendance ? userAttendance.status : 'absent',
+            };
+        });
+
+        return res.json(attendanceHistory);
     } catch (error) {
-      console.error('Error al obtener asistencias del usuario:', error);
-      return res.status(500).json({ message: 'Error interno del servidor' });
+        console.error('Error al obtener asistencias del usuario:', error);
+        return res.status(500).json({ message: 'Error interno del servidor' });
     }
-  };
+};
+
+exports.assignTeacher = async (req, res) => {
+    try {
+        const { classId } = req.params;
+        const { teacherId } = req.body;
+
+        // Buscar la clase
+        const classSession = await ClassSession.findById(classId);
+        if (!classSession) {
+            return res.status(404).json({ message: "Clase no encontrada" });
+        }
+
+        // Agregar el teacherId al array teachers
+        // o setearlo, depende de tu lógica
+        if (!classSession.teachers.includes(teacherId)) {
+            classSession.teachers.push(teacherId);
+        }
+
+        await classSession.save();
+        return res.json({ message: "Profesor asignado", classSession });
+    } catch (error) {
+        console.error("Error al asignar profesor:", error);
+        return res.status(500).json({ message: "Error interno" });
+    }
+};
